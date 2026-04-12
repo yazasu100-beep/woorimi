@@ -28,7 +28,7 @@ button{cursor:pointer}
 
 /* ── Shared ── */
 .mode-toggle{display:flex;background:#0d0d16;border-radius:14px;padding:4px;margin-bottom:18px;border:1px solid var(--border)}
-.mode-btn{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:700;transition:all .2s}
+.mode-btn{flex:1;padding:12px 8px;border:none;border-radius:10px;font-size:14px;font-weight:700;transition:all .2s;white-space:nowrap}
 .form-box{background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:14px}
 .form-row{margin-bottom:12px}
 .form-row:last-child{margin-bottom:0}
@@ -90,8 +90,8 @@ button{cursor:pointer}
 .cat-section-label{font-size:11px;color:var(--text3);margin-bottom:8px;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
 .cat-edit-btn{font-size:11px;color:var(--gold);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:6px}
 .cat-edit-btn:hover{background:rgba(245,158,11,.1)}
-.cat-pills{display:flex;gap:10px;flex-wrap:wrap}
-.cat-pill{padding:10px 18px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;font-size:14px;background:var(--surface2);color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:6px}
+.cat-pills{display:flex;gap:8px;flex-wrap:wrap;row-gap:8px}
+.cat-pill{padding:8px 14px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;font-size:13px;background:var(--surface2);color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .cat-pill.active-inc{background:linear-gradient(135deg,#059669,#10b981);border-color:transparent;color:#fff;font-weight:700}
 .cat-pill.active-exp{background:linear-gradient(135deg,#dc2626,#ef4444);border-color:transparent;color:#fff;font-weight:700}
 .cat-pill:active{transform:scale(.96)}
@@ -633,8 +633,8 @@ body.edit-mode .edit-wrap:hover [data-i18n] {
           <div class="pc-brand-title" data-i18n="appTitle">대리구매 가계부</div>
           <div class="pc-brand-date" id="pc-date"></div>
         </div>
-        <button class="lang-btn" onclick="toggleLang()" id="pc-langBtn" style="margin-left:auto;position:static">EN</button>
       </div>
+      <button class="lang-btn" onclick="toggleLang()" id="pc-langBtn" style="position:static;width:100%">EN</button>
     </div>
 
     <!-- Nav -->
@@ -710,7 +710,7 @@ body.edit-mode .edit-wrap:hover [data-i18n] {
     <div id="pc-pane-pos" class="pc-form-wrap">
       <input type="file" id="pc-imgInput" accept="image/*" style="display:none" onchange="handleImg(event)">
       <button class="scan-btn" onclick="triggerScan()"><span style="font-size:18px">📸</span> <span data-i18n="aiScan">입금 스크린샷 AI 자동입력</span></button>
-      <div class="scan-hint" data-i18n="aiHint">입금문자 / 카카오페이 / 계좌내역</div>
+      <div class="scan-hint" data-i18n="aiHint">입금문자 / 카카오페이 / 계좌내역 스크린샷 → 자동 인식</div>
       <div class="ai-loading hidden" id="pc-aiLoad"><div class="spinner"></div><p data-i18n="aiAnalyzing">AI가 분석 중...</p></div>
       <div class="ai-result hidden" id="pc-aiRes">
         <div class="ai-result-title" data-i18n="aiResult">🤖 AI 인식 결과</div>
@@ -911,7 +911,7 @@ body.edit-mode .edit-wrap:hover [data-i18n] {
   <div class="modal">
     <h3 id="catModalTitle">✏️ 카테고리 편집</h3>
     <div id="catEditorList"></div>
-    <button class="cat-add-btn" style="width:100%;margin-top:8px;padding:10px;border-radius:12px" onclick="addCatItem()" id="catAddBtn">+ 추가</button>
+    <button class="cat-add-btn" style="width:100%;margin-top:8px;padding:10px;border-radius:12px" onclick="addCatItem()" id="catAddBtn" data-i18n-ko="+ 추가" data-i18n-en="+ Add">+ 추가</button>
     <button class="modal-save" style="margin-top:12px" onclick="saveCats()">저장</button>
     <button class="modal-cancel" onclick="document.getElementById('catModal').classList.add('hidden')">취소</button>
   </div>
@@ -971,17 +971,31 @@ let driveFileId = localStorage.getItem('drive-file-id') || null;
 // Default categories
 const DEFAULT_CATS = {
   income: [
-    {emoji:'💰', name:'매출 입금', hasMyr:false},
-    {emoji:'💵', name:'수수료 수입', hasMyr:false},
-    {emoji:'📦', name:'기타 수입', hasMyr:false},
+    {emoji:'💰', name:'Sales Income', hasMyr:false},
+    {emoji:'💵', name:'Commission', hasMyr:false},
+    {emoji:'📦', name:'Other Income', hasMyr:false},
   ],
   expense: [
-    {emoji:'🏦', name:'아리 충전', defaultAmt:950000, hasMyr:true},
-    {emoji:'🚚', name:'배송비', defaultAmt:0, hasMyr:false},
-    {emoji:'💳', name:'기타 지출', defaultAmt:0, hasMyr:false},
+    {emoji:'🏦', name:'Ari Charge', defaultAmt:950000, hasMyr:true},
+    {emoji:'🚚', name:'Shipping', defaultAmt:0, hasMyr:false},
+    {emoji:'💳', name:'Other Expense', defaultAmt:0, hasMyr:false},
   ]
 };
 let cats = JSON.parse(localStorage.getItem('daeri-cats') || 'null') || DEFAULT_CATS;
+// Migrate: if cats still have old Korean names, reset to English defaults
+(function(){
+  const koreanNames = ['매출 입금','수수료 수입','기타 수입','아리 충전','배송비','기타 지출'];
+  let hasKorean = false;
+  ['income','expense'].forEach(type => {
+    (cats[type]||[]).forEach(cat => {
+      if(koreanNames.includes(cat.name)) hasKorean = true;
+    });
+  });
+  if(hasKorean) {
+    cats = JSON.parse(JSON.stringify(DEFAULT_CATS));
+    localStorage.setItem('daeri-cats', JSON.stringify(cats));
+  }
+})();
 let editingCatType = 'income';
 let pendingEmojiIdx = -1;
 
@@ -1046,7 +1060,6 @@ function toggleLang() {
   lang = lang === 'ko' ? 'en' : 'ko';
   localStorage.setItem('daeri-lang', lang);
   applyLang();
-  renderCatSection();
   refreshAll();
 }
 
@@ -1057,6 +1070,14 @@ function applyLang() {
   });
   const btn = lang === 'ko' ? 'EN' : '한';
   const srch=document.getElementById('histSearch'); if(srch) srch.placeholder=t('searchPlaceholder');
+  // Update memo placeholders
+  const memoPlaceholder = lang==='ko'?'고객명, SNS...':'Customer name, SNS...';
+  ['m-fMemo','pc-fMemo'].forEach(id=>{const el=document.getElementById(id);if(el)el.placeholder=memoPlaceholder;});
+  // Update cat add button
+  const cab=document.getElementById('catAddBtn');
+  if(cab) cab.textContent = lang==='ko'?'+ 추가':'+ Add';
+  // Re-render cat section with correct language
+  renderCatSection();
   document.querySelectorAll('.lang-btn').forEach(b => b.textContent = btn);
   // Update Drive modal description
   const dm = document.getElementById('driveModalDesc');
@@ -1249,9 +1270,10 @@ function pickCat(name, idx) {
 
 function openCatEditor() {
   editingCatType = mode;
-  const titleKo = mode==='income'?'수입 카테고리 편집':'지출 카테고리 편집';
-  const titleEn = mode==='income'?'Edit Income Categories':'Edit Expense Categories';
-  document.getElementById('catModalTitle').textContent = '✏️ '+(lang==='ko'?titleKo:titleEn);
+  const typeLabel = editingCatType === 'income'
+    ? (lang==='ko'?'수입':'Income')
+    : (lang==='ko'?'지출':'Expense');
+  document.getElementById('catModalTitle').textContent = `✏️ ${typeLabel} ${lang==='ko'?'카테고리 편집':'Categories'}`;
   renderCatEditorList();
   document.getElementById('catModal').classList.remove('hidden');
 }
@@ -1260,8 +1282,8 @@ function renderCatEditorList() {
   const list = cats[editingCatType];
   document.getElementById('catEditorList').innerHTML = list.map((c,i)=>`
     <div class="cat-editor-item" id="catItem-${i}">
-      <span class="cat-editor-emoji" title="클릭해서 변경" onclick="openEmojiPicker(${i})">${c.emoji}</span>
-      <input class="cat-editor-name" value="${c.name}" id="catName-${i}" placeholder="카테고리 이름">
+      <span class="cat-editor-emoji" title="Click to change" onclick="openEmojiPicker(${i})">${c.emoji}</span>
+      <input class="cat-editor-name" value="${c.name}" id="catName-${i}" placeholder="Category name">
       <button class="cat-editor-del" onclick="delCatItem(${i})">✕</button>
     </div>`).join('');
 }
@@ -1279,7 +1301,11 @@ function delCatItem(i) {
 }
 
 function saveCats() {
-  cats[editingCatType] = cats[editingCatType].map((c,i)=>({...c, name: document.getElementById('catName-'+i)?.value||c.name}));
+  cats[editingCatType] = cats[editingCatType].map((c, i) => {
+    const nameEl = document.getElementById('catName-'+i);
+    const newName = nameEl ? nameEl.value.trim() : c.name;
+    return {...c, name: newName || c.name};
+  });
   saveCatsStore();
   document.getElementById('catModal').classList.add('hidden');
   selCat = '';
@@ -1385,7 +1411,7 @@ function submit(src) {
   const memo=((g(p+'fMemo')||{}).value||'').trim();
   const myrVal=parseFloat((g(p+'fMyr')||{}).value||'');
   if(!date||isNaN(amt)||amt<=0){flash('err',t('errDate'));return;}
-  records.unshift({id:Date.now(),date,mode,category:selCat||(mode==='income'?cats.income[0]?.name||'매출 입금':cats.expense[2]?.name||'기타 지출'),memo,amount:amt,myr:isNaN(myrVal)?null:myrVal});
+  records.unshift({id:Date.now(),date,mode,category:selCat||(mode==='income'?cats.income[0]?.name||'Sales Income':cats.expense[2]?.name||'Other Expense'),memo,amount:amt,myr:isNaN(myrVal)?null:myrVal});
   save();
   flash('ok',mode==='income'?`+${krw(amt)} ${t('incOK')}`:`${krw(amt)} ${t('expOK')}`);
   ['m-','pc-'].forEach(p=>{
@@ -1404,6 +1430,11 @@ function flash(type,msg) {
 // ══════════════════════════════════════
 // RECORDS
 // ══════════════════════════════════════
+// Display category name — just return as-is (English)
+function catNameDisplay(storedName) {
+  return storedName || '';
+}
+
 function recHTML(r) {
   const ibg=r.mode==='income'?'rgba(52,211,153,.12)':'rgba(248,113,113,.12)';
   const ac=r.mode==='income'?'var(--green)':'var(--red)';
@@ -1413,7 +1444,7 @@ function recHTML(r) {
     const match=list.find(c=>c.name===r.category);
     return match?match.emoji:(r.mode==='income'?'💰':'💳');
   })();
-  return `<div class="rec-card"><div class="rec-icon" style="background:${ibg}">${catEmoji}</div><div class="rec-body"><div class="rec-top"><div class="rec-name">${r.category||'—'}</div><div class="rec-amount" style="color:${ac}">${r.mode==='income'?'+':'-'}${krw(r.amount)}</div></div><div class="rec-bottom"><span class="rec-meta">${dateDisp}${r.memo?' · '+r.memo:''}</span>${myrStr}</div></div><button class="rec-del" onclick="delRec(${r.id})">✕</button></div>`;
+  return `<div class="rec-card"><div class="rec-icon" style="background:${ibg}">${catEmoji}</div><div class="rec-body"><div class="rec-top"><div class="rec-name">${catNameDisplay(r.category||'—')}</div><div class="rec-amount" style="color:${ac}">${r.mode==='income'?'+':'-'}${krw(r.amount)}</div></div><div class="rec-bottom"><span class="rec-meta">${dateDisp}${r.memo?' · '+r.memo:''}</span>${myrStr}</div></div><button class="rec-del" onclick="delRec(${r.id})">✕</button></div>`;
 }
 
 function renderMobileHistory() {
@@ -1554,7 +1585,7 @@ function getStats() {
   const {start,end} = getPeriodRange();
   const mr = records.filter(r=>r.date>=start && r.date<=end && r.date.startsWith(String(activeYear)));
   const sum=(a,m)=>a.filter(r=>r.mode===m).reduce((s,r)=>s+r.amount,0);
-  const ari=mr.filter(r=>r.category==='아리 충전'||r.category==='Ari Charge'||r.category==='아리충전');
+  const ari=mr.filter(r=>r.category==='Ari Charge'||r.category==='아리 충전'||r.category==='아리충전');
   const totalMYR=ari.reduce((s,r)=>s+(r.myr||0),0),totalKRW=ari.reduce((s,r)=>s+r.amount,0);
   const cs={};mr.filter(r=>r.mode==='expense').forEach(r=>{cs[r.category]=(cs[r.category]||0)+r.amount;});
   const d=today(),ym=d.slice(0,7);
@@ -1563,7 +1594,7 @@ function getStats() {
 }
 const kpi3=(i,e,n)=>`<div class="kpi3-card" style="border-color:rgba(16,185,129,.2)"><div class="kpi3-label">${t('income')}</div><div class="kpi3-val" style="color:var(--green)">${krw(i)}</div></div><div class="kpi3-card" style="border-color:rgba(239,68,68,.2)"><div class="kpi3-label">${t('expense')}</div><div class="kpi3-val" style="color:var(--red)">${krw(e)}</div></div><div class="kpi3-card" style="border-color:rgba(245,158,11,.2)"><div class="kpi3-label">${t('profit')}</div><div class="kpi3-val" style="color:${n>=0?'var(--gold)':'var(--red)'}">${n>=0?'+':''}${krw(n)}</div></div>`;
 const ariHTML=d=>`<div class="ari-item"><div class="ari-item-label">${t('charges')}</div><div class="ari-item-val">${d.ari.length}${lang==='ko'?'회':'x'}</div></div><div class="ari-item"><div class="ari-item-label">${t('totalKRW')}</div><div class="ari-item-val sm">${krw(d.totalKRW)}</div></div><div class="ari-item"><div class="ari-item-label">${lang==='ko'?'원화 합계':'KRW Total'}</div><div class="ari-item-val sm">${d.totalMYR>0?d.totalMYR.toLocaleString()+'원':'—'}</div></div><div class="ari-item"><div class="ari-item-label">${t('avgRate')}</div><div class="ari-item-val sm">${d.avgRate?'1 RM ≈ '+d.avgRate.toLocaleString()+'원':'—'}</div></div>`;
-function catHTML(cs){const tot=Object.values(cs).reduce((a,b)=>a+b,0);return Object.entries(cs).sort((a,b)=>b[1]-a[1]).map(([c,a])=>{const p=tot>0?(a/tot*100).toFixed(0):0;return`<div class="cat-row"><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600">${c}</span><span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red)">${krw(a)}</span></div><div class="cat-bar-wrap"><div class="cat-bar" style="width:${p}%"></div></div></div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:10px;flex-shrink:0">${p}%</div></div>`;}).join('')||`<div class="empty" style="padding:20px 0">${t('noExpense')}</div>`;}
+function catHTML(cs){const tot=Object.values(cs).reduce((a,b)=>a+b,0);return Object.entries(cs).sort((a,b)=>b[1]-a[1]).map(([c,a])=>{ const displayC=catNameDisplay(c);const p=tot>0?(a/tot*100).toFixed(0):0;return`<div class="cat-row"><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600">${displayC}</span><span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red)">${krw(a)}</span></div><div class="cat-bar-wrap"><div class="cat-bar" style="width:${p}%"></div></div></div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:10px;flex-shrink:0">${p}%</div></div>`;}).join('')||`<div class="empty" style="padding:20px 0">${t('noExpense')}</div>`;}
 
 // ── Mobile summary nav state (mirrors PC but independent) ──
 let mViewDate = today();
@@ -1753,7 +1784,7 @@ async function scanImg(b64,mt){
 function applyAI(){
   if(!aiData?.length)return;
   const cnt=aiData.length;
-  aiData.forEach(tx=>{const a=Number(tx.amount);if(!isNaN(a)&&a>0)records.unshift({id:Date.now()+Math.random(),date:tx.date||today(),mode:tx.type||'income',category:tx.type==='income'?cats.income[0]?.name||'매출 입금':cats.expense[2]?.name||'기타 지출',memo:tx.memo||'',amount:a,myr:null});});
+  aiData.forEach(tx=>{const a=Number(tx.amount);if(!isNaN(a)&&a>0)records.unshift({id:Date.now()+Math.random(),date:tx.date||today(),mode:tx.type||'income',category:tx.type==='income'?cats.income[0]?.name||'Sales Income':cats.expense[2]?.name||'Other Expense',memo:tx.memo||'',amount:a,myr:null});});
   save();['m-aiRes','pc-aiRes'].forEach(id=>document.getElementById(id).classList.add('hidden'));aiData=null;
   flash('ok',`✅ ${cnt}${t('aiOK')}`);
 }
